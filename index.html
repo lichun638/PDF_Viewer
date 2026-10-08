@@ -5,15 +5,19 @@
 <meta charset="UTF-8">
 <meta name="viewport"
       content="width=device-width, initial-scale=1">
+
 <title>OOQ | Clubhouse Drawings</title>
 
 <style>
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+  }
 
-body {
-  margin: 0;
-  background: #ffffff;
-}
+  html, body {
+    margin: 0;
+    background: #ffffff;
+    font-family: "Corbel", "Arial", sans-serif;
+  }
 
   .toolbar {
     position: sticky;
@@ -27,41 +31,58 @@ body {
     background: white;
     padding: 12px 20px;
     border-bottom: 1px solid #ddd;
-    font-family: "Corbel", "Arial", sans-serif !important;
+    font-family: "Corbel", "Arial", sans-serif;
   }
 
   .controls {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
   }
 
   button {
     border: 1px solid #ddd;
     background: white;
+    color: #333;
     padding: 8px 12px;
     cursor: pointer;
     border-radius: 4px;
     font-size: 15px;
-    font-family: "Corbel", "Arial", sans-serif !important;
+    font-family: "Corbel", "Arial", sans-serif;
   }
 
-html,
-body,
-.toolbar,
-.toolbar *,
-button {
-  font-family: "Corbel", "Arial", sans-serif !important;
-}
-      
-  button:hover { background: #eee; }
+  button:hover {
+    background: #eee;
+  }
 
-#pageContainer {
-  display: flex;
-  justify-content: center;
-  padding: 5px;
-  overflow: auto;
-}
+  button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Download PDF button */
+
+  #download {
+    background: #6FA3A9;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    font-family: "Corbel", "Arial", sans-serif;
+    font-weight: bold;
+    border-radius: 4px;
+  }
+
+  #download:hover {
+    background: #57878D;
+  }
+
+  #pageContainer {
+    display: flex;
+    justify-content: center;
+    padding: 5px;
+    overflow: auto;
+  }
 
   canvas {
     display: block;
@@ -80,40 +101,66 @@ button {
 
 <body>
 
+<!-- Toolbar -->
+
 <div class="toolbar">
+
   <strong>SSA Clubhouse</strong>
 
   <div class="controls">
-    <button id="prev">‹</button>
+
+    <button id="prev" title="Previous Page">‹</button>
+
     <span id="pageInfo">1 / —</span>
-    <button id="next">›</button>
-    <button id="zoomOut">−</button>
-    <button id="zoomIn">+</button>
-    <button id="fit">Fit</button>
+
+    <button id="next" title="Next Page">›</button>
+
+    <button id="zoomOut" title="Zoom Out">−</button>
+
+    <button id="zoomIn" title="Zoom In">+</button>
+
+    <button id="fit" title="Fit to Width">Fit</button>
+
+    <button id="download" title="Download PDF">
+      ↓ Download PDF
+    </button>
+
   </div>
 </div>
 
+<!-- PDF Display -->
+
 <div id="status">Loading PDF...</div>
+
 <div id="pageContainer">
   <canvas id="pdfCanvas"></canvas>
 </div>
 
+<!-- PDF.js -->
+
 <script type="module">
+
 import * as pdfjsLib from
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.mjs";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.worker.mjs";
 
+/* PDF version selection */
+
 const params = new URLSearchParams(window.location.search);
+
 const version = params.get("version") || "V36";
 
-const allowedVersions = ["V33","V34", "V35", "V36"];
+const allowedVersions = ["V33", "V34", "V35", "V36"];
+
 const selectedVersion = allowedVersions.includes(version)
   ? version
   : "V36";
 
 const pdfURL = `./${selectedVersion}_Combined.pdf`;
+
+/* Elements */
 
 const canvas = document.getElementById("pdfCanvas");
 const ctx = canvas.getContext("2d");
@@ -121,43 +168,65 @@ const container = document.getElementById("pageContainer");
 const info = document.getElementById("pageInfo");
 const status = document.getElementById("status");
 
+const prevButton = document.getElementById("prev");
+const nextButton = document.getElementById("next");
+const downloadButton = document.getElementById("download");
+
+/* Viewer variables */
+
 let pdf = null;
 let pageNum = 1;
 let zoom = 1;
 let renderTask = null;
 let renderSequence = 0;
 
+/* Render PDF */
+
 async function renderPage() {
+
   if (!pdf) return;
 
   const sequence = ++renderSequence;
 
   if (renderTask) {
     renderTask.cancel();
-    try { await renderTask.promise; }
-    catch (e) {
-      if (e.name !== "RenderingCancelledException")
+
+    try {
+      await renderTask.promise;
+    } catch (e) {
+      if (e.name !== "RenderingCancelledException") {
         console.error(e);
+      }
     }
+
     renderTask = null;
   }
 
   if (sequence !== renderSequence) return;
 
   const page = await pdf.getPage(pageNum);
+
   if (sequence !== renderSequence) return;
 
-  const base = page.getViewport({scale: 1});
-  const availableWidth = Math.max(
-    100, container.clientWidth - 24
-  );
-  const scale = availableWidth / base.width * zoom;
-  const viewport = page.getViewport({scale});
+  const base = page.getViewport({ scale: 1 });
 
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const availableWidth = Math.max(
+    100,
+    container.clientWidth - 24
+  );
+
+  const scale = availableWidth / base.width * zoom;
+
+  const viewport = page.getViewport({ scale });
+
+  const dpr = Math.min(
+    window.devicePixelRatio || 1,
+    2
+  );
 
   canvas.width = Math.floor(viewport.width * dpr);
   canvas.height = Math.floor(viewport.height * dpr);
+
   canvas.style.width = viewport.width + "px";
   canvas.style.height = viewport.height + "px";
 
@@ -165,64 +234,107 @@ async function renderPage() {
     canvasContext: ctx,
     viewport,
     transform: dpr === 1
-      ? null : [dpr, 0, 0, dpr, 0, 0]
+      ? null
+      : [dpr, 0, 0, dpr, 0, 0]
   });
 
   try {
     await renderTask.promise;
   } catch (e) {
-    if (e.name !== "RenderingCancelledException")
+    if (e.name !== "RenderingCancelledException") {
       throw e;
+    }
   }
 
   if (sequence === renderSequence) {
     info.textContent = `${pageNum} / ${pdf.numPages}`;
     status.textContent = "";
+
+    prevButton.disabled = pageNum <= 1;
+    nextButton.disabled = pageNum >= pdf.numPages;
   }
 }
 
-document.getElementById("prev").onclick = () => {
+/* Previous page */
+
+prevButton.onclick = () => {
   if (pageNum > 1) {
     pageNum--;
     renderPage();
   }
 };
 
-document.getElementById("next").onclick = () => {
+/* Next page */
+
+nextButton.onclick = () => {
   if (pdf && pageNum < pdf.numPages) {
     pageNum++;
     renderPage();
   }
 };
 
+/* Zoom in */
+
 document.getElementById("zoomIn").onclick = () => {
   zoom *= 1.25;
   renderPage();
 };
+
+/* Zoom out */
 
 document.getElementById("zoomOut").onclick = () => {
   zoom /= 1.25;
   renderPage();
 };
 
+/* Fit to width */
+
 document.getElementById("fit").onclick = () => {
   zoom = 1;
   renderPage();
 };
 
+/* Download current PDF version */
+
+downloadButton.onclick = () => {
+
+  const link = document.createElement("a");
+
+  link.href = pdfURL;
+
+  link.download = `${selectedVersion}_Combined.pdf`;
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  link.remove();
+};
+
+/* Load PDF */
+
 try {
+
   pdf = await pdfjsLib.getDocument({
-  url: pdfURL
-}).promise;
+    url: pdfURL
+  }).promise;
+
   await renderPage();
+
 } catch (e) {
-  status.textContent = "Unable to load PDF: " + e.message;
+
+  status.textContent =
+    "Unable to load PDF: " + e.message;
+
   console.error(e);
 }
+
+/* Responsive resize */
 
 window.addEventListener("resize", () => {
   if (pdf) renderPage();
 });
+
 </script>
 
 </body>
