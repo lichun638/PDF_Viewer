@@ -95,7 +95,15 @@ import * as pdfjsLib from
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/build/pdf.worker.mjs";
 
-const pdfURL = "./V36_Combined.pdf";
+const params = new URLSearchParams(window.location.search);
+const version = params.get("version") || "V36";
+
+const allowedVersions = ["V35", "V36"];
+const selectedVersion = allowedVersions.includes(version)
+  ? version
+  : "V36";
+
+const pdfURL = `./${selectedVersion}_Combined.pdf`;
 
 const canvas = document.getElementById("pdfCanvas");
 const ctx = canvas.getContext("2d");
