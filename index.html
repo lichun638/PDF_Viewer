@@ -195,7 +195,9 @@ document.getElementById("fit").onclick = () => {
 };
 
 try {
-  pdf = await pdfjsLib.getDocument(pdfURL).promise;
+  pdf = await pdfjsLib.getDocument({
+  url: pdfURL
+}).promise;
   await renderPage();
 } catch (e) {
   status.textContent = "Unable to load PDF: " + e.message;
