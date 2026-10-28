@@ -1,341 +1,403 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
 
-<title>OOQ | Clubhouse Drawings</title>
+  <title>OOQ | Clubhouse Drawings</title>
 
-<style>
-  * {
-    box-sizing: border-box;
-  }
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-  html, body {
-    margin: 0;
-    background: #ffffff;
-    font-family: "Corbel", "Arial", sans-serif;
-  }
+    html, body {
+      margin: 0;
+      background: #ffffff;
+      font-family: "Corbel", "Arial", sans-serif;
+    }
 
-  .toolbar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    background: white;
-    padding: 12px 20px;
-    border-bottom: 1px solid #ddd;
-    font-family: "Corbel", "Arial", sans-serif;
-  }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: white;
+      padding: 12px 20px;
+      border-bottom: 1px solid #ddd;
+    }
 
-  .controls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-  button {
-    border: 1px solid #ddd;
-    background: white;
-    color: #333;
-    padding: 8px 12px;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 15px;
-    font-family: "Corbel", "Arial", sans-serif;
-  }
+    button {
+      border: 1px solid #ddd;
+      background: white;
+      color: #333;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      font-size: 15px;
+      font-family: "Corbel", "Arial", sans-serif;
+    }
 
-  button:hover {
-    background: #eee;
-  }
+    button:hover {
+      background: #eee;
+    }
 
-  button:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-  }
+    button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
 
-  /* Download PDF button */
+    #download {
+      background: #6FA3A9;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      font-weight: bold;
+      border-radius: 4px;
+    }
 
-  #download {
-    background: #6FA3A9;
-    color: white;
-    border: none;
-    padding: 8px 14px;
-    font-family: "Corbel", "Arial", sans-serif;
-    font-weight: bold;
-    border-radius: 4px;
-  }
+    #download:hover {
+      background: #57878D;
+    }
 
-  #download:hover {
-    background: #57878D;
-  }
+    #pageContainer {
+      display: flex;
+      justify-content: flex-start;
+      padding: 5px;
+      overflow: auto;
+    }
 
-  #pageContainer {
-    display: flex;
-    justify-content: center;
-    padding: 5px;
-    overflow: auto;
-  }
+    canvas {
+      display: block;
+      flex-shrink: 0;
+      margin: 0 auto;
+      background: white;
+      box-shadow: 0 2px 12px #0002;
+      max-width: none;
+    }
 
-  canvas {
-    display: block;
-    background: white;
-    box-shadow: 0 2px 12px #0002;
-    max-width: none;
-  }
+    #status {
+      text-align: center;
+      padding: 8px;
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
 
-  #status {
-    text-align: center;
-    padding: 8px;
-    font-size: 13px;
-  }
-</style>
+    #status:empty {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
 
-<!-- Toolbar -->
+  <!-- Toolbar -->
 
-<div class="toolbar">
+  <div class="toolbar">
+    <strong id="viewerTitle">SSA Clubhouse</strong>
 
-  <strong>SSA Clubhouse</strong>
+    <div class="controls">
+      <button id="prev" title="Previous Page" disabled>‹</button>
 
-  <div class="controls">
+      <span id="pageInfo">— / —</span>
 
-    <button id="prev" title="Previous Page">‹</button>
+      <button id="next" title="Next Page" disabled>›</button>
 
-    <span id="pageInfo">1 / —</span>
+      <button id="zoomOut" title="Zoom Out" disabled>−</button>
 
-    <button id="next" title="Next Page">›</button>
+      <button id="zoomIn" title="Zoom In" disabled>+</button>
 
-    <button id="zoomOut" title="Zoom Out">−</button>
+      <button id="fit" title="Fit to Width" disabled>Fit</button>
 
-    <button id="zoomIn" title="Zoom In">+</button>
-
-    <button id="fit" title="Fit to Width">Fit</button>
-
-    <button id="download" title="Download PDF">
-      ↓ Download PDF
-    </button>
-
+      <button id="download" title="Download PDF" disabled>
+        ↓ Download PDF
+      </button>
+    </div>
   </div>
-</div>
 
-<!-- PDF Display -->
+  <!-- PDF Display -->
 
-<div id="status">Loading PDF...</div>
+  <div id="status" role="status">Loading PDF viewer...</div>
 
-<div id="pageContainer">
-  <canvas id="pdfCanvas"></canvas>
-</div>
+  <div id="pageContainer">
+    <canvas id="pdfCanvas"></canvas>
+  </div>
 
-<!-- PDF.js -->
+  <script type="module">
+    /* PDF version selection */
 
-<script type="module">
+    // Change this for the latest default version.
+    const defaultVersion = "V39";
 
-import * as pdfjsLib from
-  "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/legacy/build/pdf.mjs";
+    const allowedVersions = [
+      "V32",
+      "V33",
+      "V34",
+      "V35",
+      "V36",
+      "V37",
+      "V38",
+      "V39"
+    ];
 
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-  "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/legacy/build/pdf.worker.mjs";
+    const params = new URLSearchParams(window.location.search);
 
-/* PDF version selection */
+    // Accepts ?version=V39 or ?version=v39.
+    const requestedVersion = (
+      params.get("version") || defaultVersion
+    ).trim().toUpperCase();
 
-const params = new URLSearchParams(window.location.search);
+    const selectedVersion = allowedVersions.includes(requestedVersion)
+      ? requestedVersion
+      : defaultVersion;
 
-const version = params.get("version") || "V36";
+    // The PDF must be in the same hosted folder as this HTML file.
+    const pdfURL = new URL(
+      `./${selectedVersion}_Combined.pdf`,
+      window.location.href
+    ).href;
 
-const allowedVersions = ["V32", "V33", "V34", "V35", "V36", "V37", "V38", "V39",];
+    /* Elements */
 
-const selectedVersion = allowedVersions.includes(version)
-  ? version
-  : "V36";
+    const canvas = document.getElementById("pdfCanvas");
+    const ctx = canvas.getContext("2d");
+    const container = document.getElementById("pageContainer");
+    const info = document.getElementById("pageInfo");
+    const status = document.getElementById("status");
 
-const pdfURL = `./${selectedVersion}_Combined.pdf`;
+    const prevButton = document.getElementById("prev");
+    const nextButton = document.getElementById("next");
+    const zoomOutButton = document.getElementById("zoomOut");
+    const zoomInButton = document.getElementById("zoomIn");
+    const fitButton = document.getElementById("fit");
+    const downloadButton = document.getElementById("download");
 
-/* Elements */
+    document.getElementById("viewerTitle").textContent =
+      `SSA Clubhouse · ${selectedVersion}`;
 
-const canvas = document.getElementById("pdfCanvas");
-const ctx = canvas.getContext("2d");
-const container = document.getElementById("pageContainer");
-const info = document.getElementById("pageInfo");
-const status = document.getElementById("status");
+    /* Viewer variables */
 
-const prevButton = document.getElementById("prev");
-const nextButton = document.getElementById("next");
-const downloadButton = document.getElementById("download");
+    let pdf = null;
+    let pageNum = 1;
+    let zoom = 1;
+    let renderTask = null;
+    let renderSequence = 0;
+    let resizeTimer = null;
 
-/* Viewer variables */
+    /* Update controls */
 
-let pdf = null;
-let pageNum = 1;
-let zoom = 1;
-let renderTask = null;
-let renderSequence = 0;
+    function updateControls() {
+      const ready = pdf !== null;
 
-/* Render PDF */
+      prevButton.disabled = !ready || pageNum <= 1;
+      nextButton.disabled = !ready || pageNum >= pdf.numPages;
 
-async function renderPage() {
+      zoomOutButton.disabled = !ready || zoom <= 0.25;
+      zoomInButton.disabled = !ready || zoom >= 4;
+      fitButton.disabled = !ready;
+      downloadButton.disabled = !ready;
+    }
 
-  if (!pdf) return;
+    /* Render PDF */
 
-  const sequence = ++renderSequence;
+    async function renderPage() {
+      if (!pdf) return;
 
-  if (renderTask) {
-    renderTask.cancel();
+      const sequence = ++renderSequence;
+      const requestedPage = pageNum;
 
-    try {
-      await renderTask.promise;
-    } catch (e) {
-      if (e.name !== "RenderingCancelledException") {
-        console.error(e);
+      // Capture the current task so overlapping requests cannot
+      // accidentally clear a newer rendering task.
+      const previousTask = renderTask;
+
+      if (previousTask) {
+        previousTask.cancel();
+
+        try {
+          await previousTask.promise;
+        } catch (error) {
+          if (error.name !== "RenderingCancelledException") {
+            console.error(error);
+          }
+        }
+
+        if (renderTask === previousTask) {
+          renderTask = null;
+        }
+      }
+
+      if (sequence !== renderSequence) return;
+
+      const page = await pdf.getPage(requestedPage);
+
+      if (sequence !== renderSequence) return;
+
+      const base = page.getViewport({ scale: 1 });
+      const styles = window.getComputedStyle(container);
+
+      const availableWidth = Math.max(
+        100,
+        container.clientWidth
+          - parseFloat(styles.paddingLeft)
+          - parseFloat(styles.paddingRight)
+      );
+
+      const scale = (availableWidth / base.width) * zoom;
+      const viewport = page.getViewport({ scale });
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      canvas.width = Math.ceil(viewport.width * dpr);
+      canvas.height = Math.ceil(viewport.height * dpr);
+
+      canvas.style.width = `${viewport.width}px`;
+      canvas.style.height = `${viewport.height}px`;
+
+      const task = page.render({
+        canvasContext: ctx,
+        viewport,
+        transform: dpr === 1
+          ? null
+          : [dpr, 0, 0, dpr, 0, 0]
+      });
+
+      renderTask = task;
+
+      try {
+        await task.promise;
+      } catch (error) {
+        if (error.name === "RenderingCancelledException") {
+          return;
+        }
+
+        throw error;
+      } finally {
+        if (renderTask === task) {
+          renderTask = null;
+        }
+      }
+
+      if (sequence === renderSequence) {
+        info.textContent = `${requestedPage} / ${pdf.numPages}`;
+        status.textContent = "";
+        updateControls();
       }
     }
 
-    renderTask = null;
-  }
-
-  if (sequence !== renderSequence) return;
-
-  const page = await pdf.getPage(pageNum);
-
-  if (sequence !== renderSequence) return;
-
-  const base = page.getViewport({ scale: 1 });
-
-  const availableWidth = Math.max(
-    100,
-    container.clientWidth - 24
-  );
-
-  const scale = availableWidth / base.width * zoom;
-
-  const viewport = page.getViewport({ scale });
-
-  const dpr = Math.min(
-    window.devicePixelRatio || 1,
-    2
-  );
-
-  canvas.width = Math.floor(viewport.width * dpr);
-  canvas.height = Math.floor(viewport.height * dpr);
-
-  canvas.style.width = viewport.width + "px";
-  canvas.style.height = viewport.height + "px";
-
-  renderTask = page.render({
-    canvasContext: ctx,
-    viewport,
-    transform: dpr === 1
-      ? null
-      : [dpr, 0, 0, dpr, 0, 0]
-  });
-
-  try {
-    await renderTask.promise;
-  } catch (e) {
-    if (e.name !== "RenderingCancelledException") {
-      throw e;
+    function requestRender() {
+      renderPage().catch((error) => {
+        status.textContent = `Unable to display PDF: ${error.message}`;
+        console.error(error);
+      });
     }
-  }
 
-  if (sequence === renderSequence) {
-    info.textContent = `${pageNum} / ${pdf.numPages}`;
-    status.textContent = "";
+    /* Previous page */
 
-    prevButton.disabled = pageNum <= 1;
-    nextButton.disabled = pageNum >= pdf.numPages;
-  }
-}
+    prevButton.onclick = () => {
+      if (pdf && pageNum > 1) {
+        pageNum--;
+        updateControls();
+        requestRender();
+      }
+    };
 
-/* Previous page */
+    /* Next page */
 
-prevButton.onclick = () => {
-  if (pageNum > 1) {
-    pageNum--;
-    renderPage();
-  }
-};
+    nextButton.onclick = () => {
+      if (pdf && pageNum < pdf.numPages) {
+        pageNum++;
+        updateControls();
+        requestRender();
+      }
+    };
 
-/* Next page */
+    /* Zoom in */
 
-nextButton.onclick = () => {
-  if (pdf && pageNum < pdf.numPages) {
-    pageNum++;
-    renderPage();
-  }
-};
+    zoomInButton.onclick = () => {
+      zoom = Math.min(4, zoom * 1.25);
+      updateControls();
+      requestRender();
+    };
 
-/* Zoom in */
+    /* Zoom out */
 
-document.getElementById("zoomIn").onclick = () => {
-  zoom *= 1.25;
-  renderPage();
-};
+    zoomOutButton.onclick = () => {
+      zoom = Math.max(0.25, zoom / 1.25);
+      updateControls();
+      requestRender();
+    };
 
-/* Zoom out */
+    /* Fit to width */
 
-document.getElementById("zoomOut").onclick = () => {
-  zoom /= 1.25;
-  renderPage();
-};
+    fitButton.onclick = () => {
+      zoom = 1;
+      container.scrollLeft = 0;
+      updateControls();
+      requestRender();
+    };
 
-/* Fit to width */
+    /* Download current PDF */
 
-document.getElementById("fit").onclick = () => {
-  zoom = 1;
-  renderPage();
-};
+    downloadButton.onclick = () => {
+      const link = document.createElement("a");
 
-/* Download current PDF version */
+      link.href = pdfURL;
+      link.download = `${selectedVersion}_Combined.pdf`;
 
-downloadButton.onclick = () => {
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    };
 
-  const link = document.createElement("a");
+    /* Load PDF.js and PDF */
 
-  link.href = pdfURL;
+    try {
+      const pdfjsLib = await import(
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/legacy/build/pdf.mjs"
+      );
 
-  link.download = `${selectedVersion}_Combined.pdf`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@6.3.289/legacy/build/pdf.worker.mjs";
 
-  document.body.appendChild(link);
+      status.textContent = `Loading ${selectedVersion}_Combined.pdf...`;
 
-  link.click();
+      pdf = await pdfjsLib.getDocument({
+        url: pdfURL
+      }).promise;
 
-  link.remove();
-};
+      updateControls();
+      await renderPage();
 
-/* Load PDF */
+    } catch (error) {
+      status.textContent =
+        `Unable to load ${selectedVersion}_Combined.pdf: ${error.message}`;
 
-try {
+      console.error("PDF viewer error:", error);
+      console.error("PDF URL:", pdfURL);
+    }
 
-  pdf = await pdfjsLib.getDocument({
-    url: pdfURL
-  }).promise;
+    /* Responsive resize */
 
-  await renderPage();
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
 
-} catch (e) {
-
-  status.textContent =
-    "Unable to load PDF: " + e.message;
-
-  console.error(e);
-}
-
-/* Responsive resize */
-
-window.addEventListener("resize", () => {
-  if (pdf) renderPage();
-});
-
-</script>
+      resizeTimer = setTimeout(() => {
+        if (pdf) requestRender();
+      }, 150);
+    });
+  </script>
 
 </body>
 </html>
