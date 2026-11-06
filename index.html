@@ -141,29 +141,28 @@
     // Change this for the latest default version.
     const defaultVersion = "V42a";
 
-    const allowedVersions = [
-      "V32",
-      "V33",
-      "V34",
-      "V35",
-      "V36",
-      "V37",
-      "V38",
-      "V39",
-      "V40",
-      "V42a"
-    ];
+const allowedVersions = [
+  "V32",
+  "V33",
+  "V34",
+  "V35",
+  "V36",
+  "V37",
+  "V38",
+  "V39",
+  "V40",
+  "V42a"
+];
 
-    const params = new URLSearchParams(window.location.search);
+const params = new URLSearchParams(window.location.search);
 
-    // Accepts ?version=V39 or ?version=v39.
-    const requestedVersion = (
-      params.get("version") || defaultVersion
-    ).trim().toUpperCase();
+const requestedVersion = (
+  params.get("version") || defaultVersion
+).trim();
 
-    const selectedVersion = allowedVersions.includes(requestedVersion)
-      ? requestedVersion
-      : defaultVersion;
+const selectedVersion = allowedVersions.find(
+  version => version.toLowerCase() === requestedVersion.toLowerCase()
+) || defaultVersion;
 
     // The PDF must be in the same hosted folder as this HTML file.
     const pdfURL = new URL(
